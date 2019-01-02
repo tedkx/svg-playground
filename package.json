@@ -1,0 +1,7 @@
+{
+    "name": "svg-gr-test",
+    "dependencies": {
+        "fs": "^0.0.1-security",
+        "simplify-js": "^1.2.3"
+    }
+}
