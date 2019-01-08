@@ -3,7 +3,8 @@ const simplify = require('simplify-js');
 const simplifyCoeff = 0;
 const doSimplify = true;
 
-const areas = JSON.parse(fs.readFileSync('areas.json'));
+//const areas = JSON.parse(fs.readFileSync('areas.json'));
+const areas = JSON.parse(fs.readFileSync('export.json'));
 const newAreas = [];
 
 const topLeft = {
@@ -43,43 +44,60 @@ const latlngToScreenXY = ({ lat, lng }) => {
   };
 };
 
-let diffx = 0,diffy = 0, numpoints = 0;
+let diffx = 0,
+  diffy = 0,
+  numpoints = 0;
 const avgDiff = 3.5;
 const diffThreshold = 10 * avgDiff;
 
-for(let area of areas) {
-    const { fullName, id, name, polygons } = area;
-    const paths = [];
+for (let area of areas) {
+  const { fullName, id, name, polygons } = area;
+  const paths = [];
 
-    for(let polygon of polygons) {
-        let points = polygon.map(p => latlngToScreenXY(p));
-        if(doSimplify === true)
-            points = simplify(points); 
-        paths.push(points.map((p, i) => {
-            if(i > 0) {
-                const diff = [Math.abs(points[i].x - points[i - 1].x), Math.abs(points[i].y - points[i - 1].y)];
-                if(diff[0] > diffThreshold || diff[1] > diffThreshold) {
-                    console.log('HUGE DIFF', fullName, diff);
-                    return `M${points[i].x},${points[i].y}`;
-                }
-                // diffx += Math.abs(points[i].x - points[i - 1].x);
-                // diffy += Math.abs(points[i].y - points[i - 1].y);
-                // numpoints++;
+  for (let polygon of polygons) {
+    let points = polygon.map(p => latlngToScreenXY(p));
+    if (doSimplify === true) points = simplify(points);
+    paths.push(
+      points
+        .map((p, i) => {
+          if (i > 0) {
+            const diff = [
+              Math.abs(points[i].x - points[i - 1].x),
+              Math.abs(points[i].y - points[i - 1].y),
+            ];
+            if (diff[0] > diffThreshold || diff[1] > diffThreshold) {
+              console.log('HUGE DIFF', fullName, diff);
+              return `M${points[i].x},${points[i].y}`;
             }
-            return `${i === 0 ? 'M' : 'L'}${points[i].x},${points[i].y}`;
-            }).join(' '));
-    }
+            // diffx += Math.abs(points[i].x - points[i - 1].x);
+            // diffy += Math.abs(points[i].y - points[i - 1].y);
+            // numpoints++;
+          }
+          return `${i === 0 ? 'M' : 'L'}${points[i].x},${points[i].y}`;
+        })
+        .join(' ')
+    );
+  }
 
-    //console.log('polygons', polygons.length, '-> paths', paths.length);
+  //console.log('polygons', polygons.length, '-> paths', paths.length);
 
-    newAreas.push({
-        fullName,
-        id,
-        name,
-        path: paths.join(''),
-    })
+  newAreas.push({
+    fullName,
+    id,
+    name,
+    path: paths.join(''),
+  });
 }
 
-console.log('avgx', (diffx / numpoints).toFixed(3), 'avgy', (diffy / numpoints).toFixed(3));
+console.log(
+  'avgx',
+  (diffx / numpoints).toFixed(3),
+  'avgy',
+  (diffy / numpoints).toFixed(3)
+);
 
-fs.writeFileSync('svgPaths.js', 'window.elements = ' + JSON.stringify(newAreas), 'utf8');
+fs.writeFileSync(
+  'svgPaths.js',
+  'window.elements = ' + JSON.stringify(newAreas),
+  'utf8'
+);
